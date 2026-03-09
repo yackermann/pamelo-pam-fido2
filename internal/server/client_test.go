@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/werk/fido2-pam-go/internal/config"
+	"github.com/werk/pamelo-pam-fido2/internal/config"
 )
 
 type roundTripFunc func(*http.Request) (*http.Response, error)

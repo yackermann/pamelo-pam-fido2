@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/werk/fido2-pam-go/internal/authn"
-	"github.com/werk/fido2-pam-go/internal/config"
-	"github.com/werk/fido2-pam-go/internal/server"
-	"github.com/werk/fido2-pam-go/internal/state"
+	"github.com/werk/pamelo-pam-fido2/internal/authn"
+	"github.com/werk/pamelo-pam-fido2/internal/config"
+	"github.com/werk/pamelo-pam-fido2/internal/server"
+	"github.com/werk/pamelo-pam-fido2/internal/state"
 )
 
 type fakeServer struct {

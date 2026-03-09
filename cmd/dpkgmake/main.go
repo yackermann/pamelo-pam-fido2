@@ -10,12 +10,12 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/werk/fido2-pam-go/internal/packaging"
+	"github.com/werk/pamelo-pam-fido2/internal/packaging"
 )
 
 const (
-	moduleSourcePath       = "dist/pam_fido2_server.so"
-	configuratorSourcePath = "dist/pamfido2-configurator"
+	moduleSourcePath       = "dist/pamelo_pam_fido2.so"
+	configuratorSourcePath = "dist/pamelo-pam-fido2-configurator"
 )
 
 func main() {
@@ -93,12 +93,12 @@ func stagePayload(stageRoot, modulePath, configuratorPath string, m packaging.Ma
 		return err
 	}
 
-	moduleInstallPath := filepath.Join(stageRoot, "lib", "security", "pam_fido2_server.so")
+	moduleInstallPath := filepath.Join(stageRoot, "lib", "security", "pamelo_pam_fido2.so")
 	if err := copyFile(modulePath, moduleInstallPath, 0o755); err != nil {
 		return fmt.Errorf("copy module: %w", err)
 	}
 
-	configuratorInstallPath := filepath.Join(stageRoot, "usr", "sbin", "pamfido2-configurator")
+	configuratorInstallPath := filepath.Join(stageRoot, "usr", "sbin", "pamelo-pam-fido2-configurator")
 	if err := copyFile(configuratorPath, configuratorInstallPath, 0o755); err != nil {
 		return fmt.Errorf("copy configurator: %w", err)
 	}
@@ -157,7 +157,7 @@ func renderPostinst(m packaging.Manifest) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	line := fmt.Sprintf("auth %s pam_fido2_server.so %s", m.Activation.ModuleControl, m.Activation.ModuleArgs)
+	line := fmt.Sprintf("auth %s pamelo_pam_fido2.so %s", m.Activation.ModuleControl, m.Activation.ModuleArgs)
 	line = strings.TrimSpace(line)
 
 	enable := "false"
@@ -168,14 +168,14 @@ func renderPostinst(m packaging.Manifest) (string, error) {
 	return fmt.Sprintf(`#!/bin/sh
 set -e
 
-install -d -m 0700 -o root -g root /var/lib/fido2-pam-go/state
+install -d -m 0700 -o root -g root /var/lib/pamelo-pam-fido2/state
 
 if [ "%s" = "true" ]; then
   PAM_LINE='%s'
   for svc in %s; do
     pam_file="/etc/pam.d/${svc}"
     [ -f "$pam_file" ] || continue
-    if grep -Fq "pam_fido2_server.so" "$pam_file"; then
+    if grep -Fq "pamelo_pam_fido2.so" "$pam_file"; then
       continue
     fi
     tmp_file="$(mktemp)"
@@ -186,7 +186,7 @@ if [ "%s" = "true" ]; then
   done
 fi
 
-echo "pam-fido2-server installed. Run 'pamfido2-configurator' to bind this device."
+echo "pamelo-pam-fido2 installed. Run 'pamelo-pam-fido2-configurator' to bind this device."
 exit 0
 `, enable, line, strings.Join(services, " ")), nil
 }

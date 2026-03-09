@@ -22,7 +22,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/werk/fido2-pam-go/internal/i18n"
+	"github.com/werk/pamelo-pam-fido2/internal/i18n"
 )
 
 const (

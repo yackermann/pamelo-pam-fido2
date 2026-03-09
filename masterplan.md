@@ -2,7 +2,7 @@
 
 ## Summary
 
-- Build a Linux PAM authentication module in Go, compiled as one deployable shared object `pam_fido2_server.so`, using cgo bindings directly to Yubico `libfido2`.
+- Build a Linux PAM authentication module in Go, compiled as one deployable shared object `pamelo_pam_fido2.so`, using cgo bindings directly to Yubico `libfido2`.
 - Primary auth path: server-driven challenge/response over HTTPS JSON. Module reads PAM username, talks to server, performs local FIDO2 assertion (with `hmac-secret`), sends assertion to server, and returns PAM allow/deny.
 - Add active user feedback via PAM conversation messages during device detection, touch wait, server round-trips, and final result.
 - Add multilingual user feedback with language auto-detection and explicit override.
@@ -14,7 +14,7 @@
   - `pam_sm_authenticate`
   - `pam_sm_setcred`
 - Config path option from PAM args:
-  - `config=/etc/security/pam_fido2_server.yaml`
+  - `config=/etc/security/pam_fido2.yaml`
   - optional `debug`
 - Feedback localization:
   - `feedback.language`: `auto`, `en`, `es`, `fr`, `de`, `ja`, `zh`

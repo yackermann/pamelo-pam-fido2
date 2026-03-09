@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	appconfig "github.com/werk/fido2-pam-go/internal/config"
+	appconfig "github.com/werk/pamelo-pam-fido2/internal/config"
 )
 
 var (
@@ -216,7 +216,7 @@ func (m Manifest) ConfigInstallPath() string {
 }
 
 func (m Manifest) PackageName() string {
-	return "pam-fido2-server-" + m.Vendor.ID
+	return "pamelo-pam-fido2-" + m.Vendor.ID
 }
 
 func (m Manifest) DebianVersion() string {

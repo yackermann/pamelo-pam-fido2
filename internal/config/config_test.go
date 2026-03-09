@@ -45,7 +45,7 @@ auth:
 policy:
   fail_mode: open_continuity
 offline:
-  state_dir: /var/lib/fido2-pam-go/state
+  state_dir: /var/lib/pamelo-pam-fido2/state
 feedback:
   level: interactive
   language: es_MX

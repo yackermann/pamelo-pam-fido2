@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/werk/fido2-pam-go/internal/config"
+	"github.com/werk/pamelo-pam-fido2/internal/config"
 )
 
 type registerRequest struct {
@@ -33,15 +33,27 @@ type registerRequest struct {
 	RequestedAt     string `json:"requested_at"`
 }
 
+const cliBanner = `██████╗  █████╗ ███╗   ███╗███████╗██╗      ██████╗
+██╔══██╗██╔══██╗████╗ ████║██╔════╝██║     ██╔═══██╗
+██████╔╝███████║██╔████╔██║█████╗  ██║     ██║   ██║
+██╔═══╝ ██╔══██║██║╚██╔╝██║██╔══╝  ██║     ██║   ██║
+██║     ██║  ██║██║ ╚═╝ ██║███████╗███████╗╚██████╔╝
+╚═╝     ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝ ╚═════╝
+
+        FIDO2 SYSTEM AUTH
+`
+
 func main() {
 	cfgPath := flag.String("config", "/etc/security/pam_fido2.yaml", "Path to PAM FIDO2 YAML config")
 	deviceName := flag.String("device-name", "", "Override device name (default: hostname)")
 	domain := flag.String("domain", "", "Override domain (default: server hostname)")
 	domainJoined := flag.String("domain-joined", "auto", "Domain joined state: auto|true|false")
-	privateKeyOut := flag.String("private-key-out", "/var/lib/fido2-pam-go/device_private_key.pem", "Output path for generated device private key")
-	mockRequestOut := flag.String("mock-request-out", "/var/lib/fido2-pam-go/activation/mock_register_request.json", "Output path for mock registration request JSON")
+	privateKeyOut := flag.String("private-key-out", "/var/lib/pamelo-pam-fido2/device_private_key.pem", "Output path for generated device private key")
+	mockRequestOut := flag.String("mock-request-out", "/var/lib/pamelo-pam-fido2/activation/mock_register_request.json", "Output path for mock registration request JSON")
 	noQR := flag.Bool("no-qr", false, "Disable QR rendering")
 	flag.Parse()
+
+	fmt.Print(cliBanner)
 
 	cfg, err := config.Load(*cfgPath)
 	if err != nil {

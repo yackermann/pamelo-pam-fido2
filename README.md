@@ -1,11 +1,18 @@
-# fido2-pam-go
+# pamelo-pam-fido2
+
+██████╗  █████╗ ███╗   ███╗███████╗██╗      ██████╗
+██╔══██╗██╔══██╗████╗ ████║██╔════╝██║     ██╔═══██╗
+██████╔╝███████║██╔████╔██║█████╗  ██║     ██║   ██║
+██╔═══╝ ██╔══██║██║╚██╔╝██║██╔══╝  ██║     ██║   ██║
+██║     ██║  ██║██║ ╚═╝ ██║███████╗███████╗╚██████╔╝
+╚═╝     ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝ ╚═════╝
 
 Linux PAM authentication module in Go that uses `libfido2` for local key operations and a remote FIDO2 policy server for final allow/deny.
 
 The module is built as a single PAM shared object:
-- `pam_fido2_server.so`
+- `pamelo_pam_fido2.so`
 
-`libfido2` is vendored as a git submodule at `third_party/libfido2`, built from source as a static archive, and linked into `pam_fido2_server.so`.
+`libfido2` is vendored as a git submodule at `third_party/libfido2`, built from source as a static archive, and linked into `pamelo_pam_fido2.so`.
 
 ## Features
 
@@ -53,7 +60,7 @@ make build
 This automatically:
 - initializes/updates `third_party/libfido2` submodule
 - builds `libfido2.a` from source into `.cache/libfido2/install/lib/libfido2.a`
-- statically links that archive into `dist/pam_fido2_server.so`
+- statically links that archive into `dist/pamelo_pam_fido2.so`
 
 Optional explicit submodule/bootstrap steps:
 
@@ -84,8 +91,8 @@ Or call script directly:
 ```
 
 Output package name format:
-- `pam-fido2-server-<vendor-id>_<version>-<release>_<arch>.deb`
-- package includes `/usr/sbin/pamfido2-configurator` for first-time device binding
+- `pamelo-pam-fido2-<vendor-id>_<version>-<release>_<arch>.deb`
+- package includes `/usr/sbin/pamelo-pam-fido2-configurator` for first-time device binding
 
 ## Test
 

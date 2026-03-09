@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/werk/fido2-pam-go/internal/config"
+	"github.com/werk/pamelo-pam-fido2/internal/config"
 )
 
 var (

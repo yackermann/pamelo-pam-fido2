@@ -11,13 +11,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/werk/fido2-pam-go/internal/i18n"
+	"github.com/werk/pamelo-pam-fido2/internal/i18n"
 )
 
 const (
 	defaultTimeoutMS = 5000
 	defaultFailMode  = "closed"
-	defaultStateDir  = "/var/lib/fido2-pam-go/state"
+	defaultStateDir  = "/var/lib/pamelo-pam-fido2/state"
 	defaultFeedback  = "interactive"
 	defaultLanguage  = "auto"
 )

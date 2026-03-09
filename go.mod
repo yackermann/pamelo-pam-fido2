@@ -1,3 +1,3 @@
-module github.com/werk/fido2-pam-go
+module github.com/werk/pamelo-pam-fido2
 
 go 1.22

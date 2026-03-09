@@ -53,13 +53,13 @@ auth:
 	if err != nil {
 		t.Fatalf("LoadManifestFromOEMFolder failed: %v", err)
 	}
-	if m.PackageName() != "pam-fido2-server-acme" {
+	if m.PackageName() != "pamelo-pam-fido2-acme" {
 		t.Fatalf("unexpected package name: %s", m.PackageName())
 	}
 	if m.DebianVersion() != "1.2.3-4" {
 		t.Fatalf("unexpected debian version: %s", m.DebianVersion())
 	}
-	if filepath.Base(m.OutputDebPath()) != "pam-fido2-server-acme_1.2.3-4_amd64.deb" {
+	if filepath.Base(m.OutputDebPath()) != "pamelo-pam-fido2-acme_1.2.3-4_amd64.deb" {
 		t.Fatalf("unexpected output path: %s", m.OutputDebPath())
 	}
 	services, err := m.PAMServiceList()

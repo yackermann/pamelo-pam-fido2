@@ -14,7 +14,7 @@ policy:
   fail_mode: "closed"
 
 offline:
-  state_dir: "/var/lib/fido2-pam-go/state"
+  state_dir: "/var/lib/pamelo-pam-fido2/state"
 
 feedback:
   level: "interactive"

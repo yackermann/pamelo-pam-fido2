@@ -8,7 +8,7 @@ Build:
 make build
 ```
 
-`make build` compiles vendored `third_party/libfido2` from source and statically links it into `pam_fido2_server.so`.
+`make build` compiles vendored `third_party/libfido2` from source and statically links it into `pamelo_pam_fido2.so`.
 
 For vendor-specific Debian packages, use:
 
@@ -19,7 +19,7 @@ make dpkg OEM_FOLDER=examples/oem
 Install:
 
 ```bash
-sudo install -m 0755 dist/pam_fido2_server.so /lib/security/pam_fido2_server.so
+sudo install -m 0755 dist/pamelo_pam_fido2.so /lib/security/pamelo_pam_fido2.so
 ```
 
 ## 2. Install module config
@@ -62,12 +62,12 @@ sudo chmod 0600 /etc/security/pam_fido2.yaml
 ## 3. Configure continuity state directory
 
 Default:
-- `/var/lib/fido2-pam-go/state`
+- `/var/lib/pamelo-pam-fido2/state`
 
 Create with secure ownership:
 
 ```bash
-sudo install -d -m 0700 -o root -g root /var/lib/fido2-pam-go/state
+sudo install -d -m 0700 -o root -g root /var/lib/pamelo-pam-fido2/state
 ```
 
 In `open_continuity` mode, this directory stores the latest successful state per user:
@@ -83,7 +83,7 @@ In `open_continuity` mode, this directory stores the latest successful state per
 Edit `/etc/pam.d/sshd` and add near the top of `auth` stack:
 
 ```pam
-auth required pam_fido2_server.so config=/etc/security/pam_fido2.yaml debug
+auth required pamelo_pam_fido2.so config=/etc/security/pam_fido2.yaml debug
 ```
 
 ### `login`
@@ -91,7 +91,7 @@ auth required pam_fido2_server.so config=/etc/security/pam_fido2.yaml debug
 Edit `/etc/pam.d/login`:
 
 ```pam
-auth required pam_fido2_server.so config=/etc/security/pam_fido2.yaml
+auth required pamelo_pam_fido2.so config=/etc/security/pam_fido2.yaml
 ```
 
 ### `sudo`
@@ -99,7 +99,7 @@ auth required pam_fido2_server.so config=/etc/security/pam_fido2.yaml
 Edit `/etc/pam.d/sudo`:
 
 ```pam
-auth required pam_fido2_server.so config=/etc/security/pam_fido2.yaml
+auth required pamelo_pam_fido2.so config=/etc/security/pam_fido2.yaml
 ```
 
 Choose `required` vs `sufficient` according to your local PAM policy.
@@ -151,7 +151,7 @@ Debug mode in PAM args (`debug`) logs details to syslog via `pam_syslog`.
 After package install, run as admin:
 
 ```bash
-sudo pamfido2-configurator
+sudo pamelo-pam-fido2-configurator
 ```
 
 It will:
