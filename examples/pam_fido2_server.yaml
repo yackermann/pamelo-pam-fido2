@@ -1,0 +1,22 @@
+server:
+  url: "https://fido2-auth.internal"
+  timeout_ms: 5000
+
+auth:
+  mode: "mtls"
+  mtls:
+    ca_file: "/etc/security/fido2/ca.pem"
+    cert_file: "/etc/security/fido2/client.pem"
+    key_file: "/etc/security/fido2/client.key"
+  bearer:
+    token_file: "/etc/security/fido2/token"
+
+policy:
+  fail_mode: "closed" # closed | open_continuity
+
+offline:
+  state_dir: "/var/lib/fido2-pam-go/state"
+
+feedback:
+  level: "interactive" # minimal | interactive
+  language: "auto"     # auto | en | es | fr | de | ja | zh
