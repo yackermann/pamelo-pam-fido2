@@ -1,11 +1,13 @@
 # pamelo-pam-fido2
 
+```
 ██████╗  █████╗ ███╗   ███╗███████╗██╗      ██████╗
 ██╔══██╗██╔══██╗████╗ ████║██╔════╝██║     ██╔═══██╗
 ██████╔╝███████║██╔████╔██║█████╗  ██║     ██║   ██║
 ██╔═══╝ ██╔══██║██║╚██╔╝██║██╔══╝  ██║     ██║   ██║
 ██║     ██║  ██║██║ ╚═╝ ██║███████╗███████╗╚██████╔╝
 ╚═╝     ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝ ╚═════╝
+```
 
 Linux PAM authentication module in Go that uses `libfido2` for local key operations and a remote FIDO2 policy server for final allow/deny.
 
