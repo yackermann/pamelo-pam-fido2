@@ -55,7 +55,7 @@ import (
 	"github.com/werk/fido2-pam-go/internal/state"
 )
 
-const defaultConfigPath = "/etc/security/pam_fido2_server.yaml"
+const defaultConfigPath = "/etc/security/pam_fido2.yaml"
 
 type moduleOptions struct {
 	configPath string

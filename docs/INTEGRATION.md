@@ -10,6 +10,12 @@ make build
 
 `make build` compiles vendored `third_party/libfido2` from source and statically links it into `pam_fido2_server.so`.
 
+For vendor-specific Debian packages, use:
+
+```bash
+make dpkg OEM_FOLDER=examples/oem
+```
+
 Install:
 
 ```bash
@@ -20,17 +26,17 @@ sudo install -m 0755 dist/pam_fido2_server.so /lib/security/pam_fido2_server.so
 
 ```bash
 sudo install -d -m 0700 /etc/security/fido2
-sudo install -m 0600 examples/pam_fido2_server.yaml /etc/security/pam_fido2_server.yaml
+sudo install -m 0600 examples/oem/pam_fido2.yaml /etc/security/pam_fido2.yaml
 ```
 
-Edit `/etc/security/pam_fido2_server.yaml` for your server URL and auth mode (`mtls` or `bearer`).
+Edit `/etc/security/pam_fido2.yaml` for your server URL and auth mode (`mtls` or `bearer`).
 
 ### mTLS mode
 
-Required files:
-- `auth.mtls.ca_file`
-- `auth.mtls.cert_file`
-- `auth.mtls.key_file`
+Supported mTLS sources:
+- File paths: `auth.mtls.{ca_file,cert_file,key_file}`
+- Inline PEM: `auth.mtls.{ca_pem,cert_pem,key_pem}`
+- Inline base64 PEM: `auth.mtls.{ca_pem_b64,cert_pem_b64,key_pem_b64}`
 
 Recommended permissions:
 
@@ -44,13 +50,13 @@ sudo chmod 0644 /etc/security/fido2/ca.pem
 
 Set:
 - `auth.mode: bearer`
-- `auth.bearer.token_file: /etc/security/fido2/token`
+- `auth.bearer.token: <license-key>`
 
 Permissions:
 
 ```bash
-sudo chown root:root /etc/security/fido2/token
-sudo chmod 0600 /etc/security/fido2/token
+sudo chown root:root /etc/security/pam_fido2.yaml
+sudo chmod 0600 /etc/security/pam_fido2.yaml
 ```
 
 ## 3. Configure continuity state directory
@@ -77,7 +83,7 @@ In `open_continuity` mode, this directory stores the latest successful state per
 Edit `/etc/pam.d/sshd` and add near the top of `auth` stack:
 
 ```pam
-auth required pam_fido2_server.so config=/etc/security/pam_fido2_server.yaml debug
+auth required pam_fido2_server.so config=/etc/security/pam_fido2.yaml debug
 ```
 
 ### `login`
@@ -85,7 +91,7 @@ auth required pam_fido2_server.so config=/etc/security/pam_fido2_server.yaml deb
 Edit `/etc/pam.d/login`:
 
 ```pam
-auth required pam_fido2_server.so config=/etc/security/pam_fido2_server.yaml
+auth required pam_fido2_server.so config=/etc/security/pam_fido2.yaml
 ```
 
 ### `sudo`
@@ -93,7 +99,7 @@ auth required pam_fido2_server.so config=/etc/security/pam_fido2_server.yaml
 Edit `/etc/pam.d/sudo`:
 
 ```pam
-auth required pam_fido2_server.so config=/etc/security/pam_fido2_server.yaml
+auth required pam_fido2_server.so config=/etc/security/pam_fido2.yaml
 ```
 
 Choose `required` vs `sufficient` according to your local PAM policy.
@@ -139,3 +145,17 @@ pamtester sshd <username> authenticate
   - Check server TLS connectivity and mTLS token/cert settings.
 
 Debug mode in PAM args (`debug`) logs details to syslog via `pam_syslog`.
+
+## 9. Device activation
+
+After package install, run as admin:
+
+```bash
+sudo pamfido2-configurator
+```
+
+It will:
+- generate and store a device private key
+- print device ID + pairing code
+- render a QR payload (if `qrencode` is installed)
+- output a mock device registration API request JSON

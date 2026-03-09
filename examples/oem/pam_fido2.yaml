@@ -1,0 +1,30 @@
+server:
+  url: "https://auth.acme.example"
+  timeout_ms: 5000
+
+auth:
+  mode: "bearer"
+  bearer:
+    token: "LICENSE-KEY-BOUND-TO-DOMAIN"
+
+license:
+  token: "LICENSE-KEY-BOUND-TO-DOMAIN"
+
+policy:
+  fail_mode: "closed"
+
+offline:
+  state_dir: "/var/lib/fido2-pam-go/state"
+
+feedback:
+  level: "interactive"
+  language: "auto"
+
+# Optional mTLS material embedded directly in config when auth.mode=mtls.
+# Keep each PEM on one line (escaped newlines) or use *_pem_b64 fields.
+# auth:
+#   mode: "mtls"
+#   mtls:
+#     ca_pem_b64: "<base64 PEM>"
+#     cert_pem_b64: "<base64 PEM>"
+#     key_pem_b64: "<base64 PEM>"

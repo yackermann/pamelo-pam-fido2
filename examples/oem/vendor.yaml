@@ -1,0 +1,17 @@
+vendor:
+  id: acme
+  name: Acme Security
+package:
+  version: 1.0.0
+  release: 1
+  architecture: amd64
+  maintainer: Acme Security Team <security@example.com>
+  description: Acme-branded FIDO2 PAM module for Ubuntu
+  depends: libpam0g,libssl3,libcbor0.8,zlib1g,libudev1
+activation:
+  enable_on_install: true
+  pam_services: sshd,login,sudo
+  module_control: required
+  module_args: config=/etc/security/pam_fido2.yaml
+output:
+  dir: dist/packages

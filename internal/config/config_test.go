@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/base64"
 	"os"
 	"path/filepath"
 	"testing"
@@ -17,6 +18,20 @@ func writeTempConfig(t *testing.T, body string) string {
 }
 
 func TestLoadMTLSConfig(t *testing.T) {
+	dir := t.TempDir()
+	caPath := filepath.Join(dir, "ca.pem")
+	certPath := filepath.Join(dir, "cert.pem")
+	keyPath := filepath.Join(dir, "key.pem")
+	if err := os.WriteFile(caPath, []byte("CA"), 0o600); err != nil {
+		t.Fatalf("write ca: %v", err)
+	}
+	if err := os.WriteFile(certPath, []byte("CERT"), 0o600); err != nil {
+		t.Fatalf("write cert: %v", err)
+	}
+	if err := os.WriteFile(keyPath, []byte("KEY"), 0o600); err != nil {
+		t.Fatalf("write key: %v", err)
+	}
+
 	path := writeTempConfig(t, `
 server:
   url: https://auth.example.com
@@ -24,9 +39,9 @@ server:
 auth:
   mode: mtls
   mtls:
-    ca_file: /etc/pki/ca.pem
-    cert_file: /etc/pki/client.pem
-    key_file: /etc/pki/client.key
+    ca_file: `+caPath+`
+    cert_file: `+certPath+`
+    key_file: `+keyPath+`
 policy:
   fail_mode: open_continuity
 offline:
@@ -55,13 +70,19 @@ feedback:
 }
 
 func TestLoadBearerConfig(t *testing.T) {
+	dir := t.TempDir()
+	tokenPath := filepath.Join(dir, "token")
+	if err := os.WriteFile(tokenPath, []byte("bearer-token"), 0o600); err != nil {
+		t.Fatalf("write token: %v", err)
+	}
+
 	path := writeTempConfig(t, `
 server:
   url: https://auth.example.com
 auth:
   mode: bearer
   bearer:
-    token_file: /etc/security/token
+    token_file: `+tokenPath+`
 `)
 
 	cfg, err := Load(path)
@@ -71,7 +92,7 @@ auth:
 	if cfg.Auth.Mode != "bearer" {
 		t.Fatalf("unexpected auth mode: %s", cfg.Auth.Mode)
 	}
-	if cfg.Auth.Bearer.TokenFile != "/etc/security/token" {
+	if cfg.Auth.Bearer.TokenFile != tokenPath {
 		t.Fatalf("unexpected token file: %s", cfg.Auth.Bearer.TokenFile)
 	}
 	if cfg.Policy.FailMode != "closed" {
@@ -111,13 +132,19 @@ auth:
 }
 
 func TestInvalidFeedbackLanguage(t *testing.T) {
+	dir := t.TempDir()
+	tokenPath := filepath.Join(dir, "token")
+	if err := os.WriteFile(tokenPath, []byte("bearer-token"), 0o600); err != nil {
+		t.Fatalf("write token: %v", err)
+	}
+
 	path := writeTempConfig(t, `
 server:
   url: https://auth.example.com
 auth:
   mode: bearer
   bearer:
-    token_file: /token
+    token_file: `+tokenPath+`
 feedback:
   language: pt_BR
 `)
@@ -139,5 +166,30 @@ func TestLoadBearerToken(t *testing.T) {
 	}
 	if tok != "token-value" {
 		t.Fatalf("unexpected token value: %q", tok)
+	}
+}
+
+func TestResolveTokenInline(t *testing.T) {
+	tok, err := (BearerAuthConfig{Token: "inline-license-token"}).ResolveToken()
+	if err != nil {
+		t.Fatalf("ResolveToken failed: %v", err)
+	}
+	if tok != "inline-license-token" {
+		t.Fatalf("unexpected token value: %q", tok)
+	}
+}
+
+func TestResolveMTLSInlineB64(t *testing.T) {
+	mtls := MTLSConfig{
+		CAPEMB64:   base64.StdEncoding.EncodeToString([]byte("CA-PEM")),
+		CertPEMB64: base64.StdEncoding.EncodeToString([]byte("CERT-PEM")),
+		KeyPEMB64:  base64.StdEncoding.EncodeToString([]byte("KEY-PEM")),
+	}
+	ca, cert, key, err := mtls.ResolveMaterial()
+	if err != nil {
+		t.Fatalf("ResolveMaterial failed: %v", err)
+	}
+	if string(ca) != "CA-PEM" || string(cert) != "CERT-PEM" || string(key) != "KEY-PEM" {
+		t.Fatalf("unexpected decoded material")
 	}
 }

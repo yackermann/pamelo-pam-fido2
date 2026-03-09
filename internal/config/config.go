@@ -2,6 +2,7 @@ package config
 
 import (
 	"bufio"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/url"
@@ -28,6 +29,7 @@ var (
 type Config struct {
 	Server   ServerConfig   `json:"server"`
 	Auth     AuthConfig     `json:"auth"`
+	License  LicenseConfig  `json:"license"`
 	Policy   PolicyConfig   `json:"policy"`
 	Offline  OfflineConfig  `json:"offline"`
 	Feedback FeedbackConfig `json:"feedback"`
@@ -45,13 +47,24 @@ type AuthConfig struct {
 }
 
 type MTLSConfig struct {
-	CAFile   string `json:"ca_file"`
-	CertFile string `json:"cert_file"`
-	KeyFile  string `json:"key_file"`
+	CAFile     string `json:"ca_file"`
+	CertFile   string `json:"cert_file"`
+	KeyFile    string `json:"key_file"`
+	CAPEM      string `json:"ca_pem"`
+	CertPEM    string `json:"cert_pem"`
+	KeyPEM     string `json:"key_pem"`
+	CAPEMB64   string `json:"ca_pem_b64"`
+	CertPEMB64 string `json:"cert_pem_b64"`
+	KeyPEMB64  string `json:"key_pem_b64"`
 }
 
 type BearerAuthConfig struct {
 	TokenFile string `json:"token_file"`
+	Token     string `json:"token"`
+}
+
+type LicenseConfig struct {
+	Token string `json:"token"`
 }
 
 type PolicyConfig struct {
@@ -106,12 +119,49 @@ func (c *Config) Validate() error {
 
 	switch c.Auth.Mode {
 	case "mtls":
-		if c.Auth.MTLS.CAFile == "" || c.Auth.MTLS.CertFile == "" || c.Auth.MTLS.KeyFile == "" {
-			return fmt.Errorf("%w: auth.mtls.{ca_file,cert_file,key_file} are required in mtls mode", ErrInvalidConfig)
+		hasFiles := c.Auth.MTLS.CAFile != "" || c.Auth.MTLS.CertFile != "" || c.Auth.MTLS.KeyFile != ""
+		hasInlinePEM := c.Auth.MTLS.CAPEM != "" || c.Auth.MTLS.CertPEM != "" || c.Auth.MTLS.KeyPEM != ""
+		hasInlinePEMB64 := c.Auth.MTLS.CAPEMB64 != "" || c.Auth.MTLS.CertPEMB64 != "" || c.Auth.MTLS.KeyPEMB64 != ""
+
+		sources := 0
+		if hasFiles {
+			if c.Auth.MTLS.CAFile == "" || c.Auth.MTLS.CertFile == "" || c.Auth.MTLS.KeyFile == "" {
+				return fmt.Errorf("%w: auth.mtls file mode requires {ca_file,cert_file,key_file}", ErrInvalidConfig)
+			}
+			sources++
+		}
+		if hasInlinePEM {
+			if c.Auth.MTLS.CAPEM == "" || c.Auth.MTLS.CertPEM == "" || c.Auth.MTLS.KeyPEM == "" {
+				return fmt.Errorf("%w: auth.mtls inline PEM mode requires {ca_pem,cert_pem,key_pem}", ErrInvalidConfig)
+			}
+			sources++
+		}
+		if hasInlinePEMB64 {
+			if c.Auth.MTLS.CAPEMB64 == "" || c.Auth.MTLS.CertPEMB64 == "" || c.Auth.MTLS.KeyPEMB64 == "" {
+				return fmt.Errorf("%w: auth.mtls inline base64 PEM mode requires {ca_pem_b64,cert_pem_b64,key_pem_b64}", ErrInvalidConfig)
+			}
+			sources++
+		}
+		if sources == 0 {
+			return fmt.Errorf("%w: auth.mtls requires one source: file paths or inline PEM or inline PEM base64", ErrInvalidConfig)
+		}
+		if sources > 1 {
+			return fmt.Errorf("%w: auth.mtls must use exactly one source mode", ErrInvalidConfig)
+		}
+		if _, _, _, err := c.Auth.MTLS.ResolveMaterial(); err != nil {
+			return fmt.Errorf("%w: invalid auth.mtls values: %v", ErrInvalidConfig, err)
 		}
 	case "bearer":
-		if c.Auth.Bearer.TokenFile == "" {
-			return fmt.Errorf("%w: auth.bearer.token_file is required in bearer mode", ErrInvalidConfig)
+		hasFile := strings.TrimSpace(c.Auth.Bearer.TokenFile) != ""
+		hasInline := strings.TrimSpace(c.Auth.Bearer.Token) != ""
+		if !hasFile && !hasInline {
+			return fmt.Errorf("%w: bearer mode requires auth.bearer.token_file or auth.bearer.token", ErrInvalidConfig)
+		}
+		if hasFile && hasInline {
+			return fmt.Errorf("%w: bearer mode requires exactly one of auth.bearer.token_file or auth.bearer.token", ErrInvalidConfig)
+		}
+		if _, err := c.Auth.Bearer.ResolveToken(); err != nil {
+			return fmt.Errorf("%w: invalid bearer token source: %v", ErrInvalidConfig, err)
 		}
 	default:
 		return fmt.Errorf("%w: auth.mode must be one of [mtls bearer]", ErrInvalidConfig)
@@ -231,6 +281,22 @@ func applySetting(cfg *Config, path []string, value string) error {
 		cfg.Auth.MTLS.KeyFile = value
 	case "auth.bearer.token_file":
 		cfg.Auth.Bearer.TokenFile = value
+	case "auth.bearer.token":
+		cfg.Auth.Bearer.Token = value
+	case "auth.mtls.ca_pem":
+		cfg.Auth.MTLS.CAPEM = value
+	case "auth.mtls.cert_pem":
+		cfg.Auth.MTLS.CertPEM = value
+	case "auth.mtls.key_pem":
+		cfg.Auth.MTLS.KeyPEM = value
+	case "auth.mtls.ca_pem_b64":
+		cfg.Auth.MTLS.CAPEMB64 = value
+	case "auth.mtls.cert_pem_b64":
+		cfg.Auth.MTLS.CertPEMB64 = value
+	case "auth.mtls.key_pem_b64":
+		cfg.Auth.MTLS.KeyPEMB64 = value
+	case "license.token":
+		cfg.License.Token = value
 	case "policy.fail_mode":
 		cfg.Policy.FailMode = value
 	case "offline.state_dir":
@@ -299,4 +365,55 @@ func LoadBearerToken(path string) (string, error) {
 		return "", fmt.Errorf("%w: bearer token file is empty", ErrInvalidConfig)
 	}
 	return t, nil
+}
+
+func (b BearerAuthConfig) ResolveToken() (string, error) {
+	if tok := strings.TrimSpace(b.Token); tok != "" {
+		return tok, nil
+	}
+	if strings.TrimSpace(b.TokenFile) == "" {
+		return "", fmt.Errorf("%w: token_file and token are both empty", ErrInvalidConfig)
+	}
+	return LoadBearerToken(b.TokenFile)
+}
+
+func (m MTLSConfig) ResolveMaterial() (caPEM []byte, certPEM []byte, keyPEM []byte, err error) {
+	hasFiles := m.CAFile != "" || m.CertFile != "" || m.KeyFile != ""
+	hasInline := m.CAPEM != "" || m.CertPEM != "" || m.KeyPEM != ""
+	hasInlineB64 := m.CAPEMB64 != "" || m.CertPEMB64 != "" || m.KeyPEMB64 != ""
+
+	switch {
+	case hasFiles:
+		caPEM, err = os.ReadFile(m.CAFile)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		certPEM, err = os.ReadFile(m.CertFile)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		keyPEM, err = os.ReadFile(m.KeyFile)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		return caPEM, certPEM, keyPEM, nil
+	case hasInline:
+		return []byte(m.CAPEM), []byte(m.CertPEM), []byte(m.KeyPEM), nil
+	case hasInlineB64:
+		caPEM, err = base64.StdEncoding.DecodeString(strings.TrimSpace(m.CAPEMB64))
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf("decode ca_pem_b64: %w", err)
+		}
+		certPEM, err = base64.StdEncoding.DecodeString(strings.TrimSpace(m.CertPEMB64))
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf("decode cert_pem_b64: %w", err)
+		}
+		keyPEM, err = base64.StdEncoding.DecodeString(strings.TrimSpace(m.KeyPEMB64))
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf("decode key_pem_b64: %w", err)
+		}
+		return caPEM, certPEM, keyPEM, nil
+	default:
+		return nil, nil, nil, fmt.Errorf("%w: no mTLS source configured", ErrInvalidConfig)
+	}
 }

@@ -62,6 +62,31 @@ git submodule update --init --recursive third_party/libfido2
 make libfido2
 ```
 
+## Vendor Debian Package (`.deb`)
+
+Create an OEM folder containing:
+- `vendor.yaml`
+- `pam_fido2.yaml`
+
+Reference OEM folder:
+- [`examples/oem`](examples/oem)
+
+Build a vendor package:
+
+```bash
+make dpkg OEM_FOLDER=examples/oem
+```
+
+Or call script directly:
+
+```bash
+./scripts/make-dpkg.sh examples/oem
+```
+
+Output package name format:
+- `pam-fido2-server-<vendor-id>_<version>-<release>_<arch>.deb`
+- package includes `/usr/sbin/pamfido2-configurator` for first-time device binding
+
 ## Test
 
 ```bash
@@ -81,10 +106,14 @@ go test -tags "libfido2 integration" ./internal/authn -run TestComputeContinuity
 ## Configuration
 
 Default config path loaded by the PAM module:
-- `/etc/security/pam_fido2_server.yaml`
+- `/etc/security/pam_fido2.yaml`
 
 Example config:
-- [`examples/pam_fido2_server.yaml`](examples/pam_fido2_server.yaml)
+- [`examples/oem/pam_fido2.yaml`](examples/oem/pam_fido2.yaml)
+
+Notes:
+- Put your license token directly in YAML via `license.token` (or bearer token in `auth.bearer.token`).
+- mTLS can be embedded directly using `auth.mtls.{ca_pem,cert_pem,key_pem}` or base64 form `*_pem_b64`.
 
 ## Integration Guide
 

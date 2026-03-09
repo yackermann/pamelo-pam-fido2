@@ -13,7 +13,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
 	"strings"
 	"time"
@@ -73,13 +72,13 @@ func New(cfg config.Config) (*Client, error) {
 	bearer := ""
 	switch cfg.Auth.Mode {
 	case "mtls":
-		cert, err := tls.LoadX509KeyPair(cfg.Auth.MTLS.CertFile, cfg.Auth.MTLS.KeyFile)
+		caPEM, certPEM, keyPEM, err := cfg.Auth.MTLS.ResolveMaterial()
+		if err != nil {
+			return nil, fmt.Errorf("%w: resolve mTLS material: %v", config.ErrInvalidConfig, err)
+		}
+		cert, err := tls.X509KeyPair(certPEM, keyPEM)
 		if err != nil {
 			return nil, fmt.Errorf("%w: loading mTLS certificate/key: %v", config.ErrInvalidConfig, err)
-		}
-		caPEM, err := os.ReadFile(cfg.Auth.MTLS.CAFile)
-		if err != nil {
-			return nil, fmt.Errorf("%w: loading CA file: %v", config.ErrInvalidConfig, err)
 		}
 		pool := x509.NewCertPool()
 		if !pool.AppendCertsFromPEM(caPEM) {
@@ -88,7 +87,7 @@ func New(cfg config.Config) (*Client, error) {
 		tlsConfig.RootCAs = pool
 		tlsConfig.Certificates = []tls.Certificate{cert}
 	case "bearer":
-		token, err := config.LoadBearerToken(cfg.Auth.Bearer.TokenFile)
+		token, err := cfg.Auth.Bearer.ResolveToken()
 		if err != nil {
 			return nil, err
 		}

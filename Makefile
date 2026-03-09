@@ -2,6 +2,7 @@ SHELL := /bin/bash
 
 OUTPUT_DIR ?= dist
 MODULE_SO ?= $(OUTPUT_DIR)/pam_fido2_server.so
+CONFIGURATOR_BIN ?= $(OUTPUT_DIR)/pamfido2-configurator
 GO_BUILD_TAGS ?= pam libfido2
 GOCACHE ?= $(CURDIR)/.cache/go-build
 LIBFIDO2_SUBMODULE_DIR ?= third_party/libfido2
@@ -11,7 +12,8 @@ LIBFIDO2_STATIC_LIB ?= $(LIBFIDO2_INSTALL_DIR)/lib/libfido2.a
 LIBFIDO2_CFLAGS ?= -I$(LIBFIDO2_INSTALL_DIR)/include
 LIBFIDO2_LDFLAGS ?= $(LIBFIDO2_STATIC_LIB) -lcrypto -lcbor -lz -ludev
 
-.PHONY: test build clean submodule libfido2 check-build-tools
+.PHONY: test build clean submodule libfido2 check-build-tools dpkg
+OEM_FOLDER ?= examples/oem
 
 test:
 	mkdir -p $(GOCACHE)
@@ -51,8 +53,12 @@ build: libfido2
 	mkdir -p $(OUTPUT_DIR)
 	mkdir -p $(GOCACHE)
 	GOCACHE=$(GOCACHE) CGO_ENABLED=1 CGO_CFLAGS="$(LIBFIDO2_CFLAGS)" CGO_LDFLAGS="$(LIBFIDO2_LDFLAGS)" go build -buildmode=c-shared -tags "$(GO_BUILD_TAGS)" -o $(MODULE_SO) ./cmd/pam_fido2_server
+	GOCACHE=$(GOCACHE) CGO_ENABLED=0 go build -o $(CONFIGURATOR_BIN) ./cmd/pamfido2-configurator
 	@# Keep deployment artifact to one file.
 	rm -f $(OUTPUT_DIR)/pam_fido2_server.h
 
 clean:
 	rm -rf $(OUTPUT_DIR) $(LIBFIDO2_BUILD_DIR) $(LIBFIDO2_INSTALL_DIR)
+
+dpkg:
+	./scripts/make-dpkg.sh $(OEM_FOLDER)
